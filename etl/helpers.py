@@ -17,3 +17,15 @@ def clean_merge(left_df, right_df, on=None, left_on=None, right_on=None, suffixe
     )
     print(f"Merged on '{on or (left_on + ' ~ ' + right_on)}', result cols: {merged_df.columns.tolist()}")
     return merged_df
+
+def safe_full_name(row, person):
+    invalid = {"", " ", "null", "none", "nan"}
+    first = row.get("first_name")
+    last = row.get("last_name")
+
+    if pd.isna(first) or str(first).strip().lower() in invalid:
+        first = "Unknown"
+    if pd.isna(last) or str(last).strip().lower() in invalid:
+        last = person
+
+    return f"{first} {last}"

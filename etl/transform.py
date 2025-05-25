@@ -1,6 +1,6 @@
 import pandas as pd
 from etl.helpers import clean_merge
-
+from etl.helpers import safe_full_name
 # -------------------------------
 # DIMENSIONS
 # -------------------------------
@@ -29,15 +29,16 @@ def transform_dim_staff(staff, store, address, city, country):
     staff_full = clean_merge(staff_full, address, left_on="address_id_store", right_on="address_id")
     staff_full = clean_merge(staff_full, city, on="city_id")
     staff_full = clean_merge(staff_full, country, on="country_id")
+    staff_full["full_name"] = staff_full.apply(lambda row: safe_full_name(row, "Staff"), axis=1)
 
     staff_star = pd.DataFrame({
         "staff_id": staff_full["staff_id"],
-        "full_name": staff_full["first_name"].fillna("Unknown") + " " + staff_full["last_name"].fillna("Staff"),
+        "full_name": staff_full["full_name"],
         "email": staff_full["email"].fillna("no_email@unknown.com"),
         "store_name": "Store " + staff_full["store_id"].astype(str),
-        "store_address": staff_full["address"].fillna('Jenin-Camp'),
-        "city": staff_full["city"].fillna('Jenin'),
-        "country": staff_full["country"].fillna('Palestine'),
+        "store_address": staff_full["address"].fillna("Jenin-Camp"),
+        "city": staff_full["city"].fillna("Jenin"),
+        "country": staff_full["country"].fillna("Palestine"),
         "active": staff_full["active"].fillna(1)
     })
 
@@ -50,13 +51,14 @@ def transform_dim_rental(rental, customer, address, city, country):
     rental_full = clean_merge(rental_full, city, on="city_id")
     rental_full = clean_merge(rental_full, country, on="country_id")
     rental_full = rental_full.dropna(subset=["inventory_id"])
+    rental_full["customer_full_name"] = rental_full.apply(lambda row: safe_full_name(row, "Customer"), axis=1)
 
     rental_star = pd.DataFrame({
         "rental_id": rental_full["rental_id"],
         "inventory_id": rental_full["inventory_id"],
         "rental_date": rental_full["rental_date"].fillna(pd.Timestamp("2027-10-7")),
         "return_date": rental_full["return_date"].fillna(pd.Timestamp("2027-10-7")),
-        "customer_full_name": rental_full["first_name"] + " " + rental_full["last_name"],
+        "customer_full_name": rental_full["customer_full_name"],
         "customer_email": rental_full["email"].fillna("no_email@unknown.com"),
         "customer_city": rental_full["city"].fillna('Jenin'),
         "customer_country": rental_full["country"].fillna('Palestine')
@@ -75,7 +77,7 @@ def transform_dim_film(film, language, film_category, category):
     })
 
     film_star = pd.DataFrame({
-        "film_id": film_full["film_id"],
+        "film_id": film_full["film_id"].drop_duplicates(),
         "title": film_full["title"].fillna("Unknown"),
         "release_year": film_full["release_year"],
         "language_name": film_full["language_name"].fillna("Unknown"),
@@ -86,7 +88,7 @@ def transform_dim_film(film, language, film_category, category):
         "category": film_full["category"].fillna("Uncategorized")
     })
 
-    return film_star.drop_duplicates()
+    return film_star.dropna()
 
 
 def transform_dim_store(store, address, city, country, staff):
@@ -94,6 +96,7 @@ def transform_dim_store(store, address, city, country, staff):
     store_full = clean_merge(store_full, city, on="city_id")
     store_full = clean_merge(store_full, country, on="country_id")
     store_full = clean_merge(store_full, staff, left_on="manager_staff_id", right_on="staff_id", suffixes=('', '_mgr'))
+    store_full["manager_name"] = store_full.apply(lambda row: safe_full_name(row, "Manager"), axis=1)
 
     store_star = pd.DataFrame({
         "store_id": store_full["store_id"],
@@ -101,9 +104,8 @@ def transform_dim_store(store, address, city, country, staff):
         "address": store_full["address"].fillna('Jenin-Camp'),
         "city": store_full["city"].fillna('Jenin'),
         "country": store_full["country"].fillna('Palestine'),
-        "manager_name": store_full["first_name"].fillna("Manager") + " " + store_full["last_name"].fillna("Unknown")
+        "manager_name": store_full["manager_name"]
     })
-
     return store_star.drop_duplicates()
 
 # -------------------------------
@@ -130,9 +132,9 @@ def transform_fact_monthly_payment(payment_df, dim_date_df):
 
 def transform_fact_daily_inventory(rental_df, inventory_df, dim_date_df):
     """Simulate inventory availability by film + store per day."""
-    rental_df["rental_date"] = pd.to_datetime(rental_df["rental_date"]).fillna(pd.Timestamp("2099-12-31"))
-    rental_df["return_date"] = pd.to_datetime(rental_df["return_date"]).fillna(pd.Timestamp("2099-12-31"))
-    dim_date_df["full_date"] = pd.to_datetime(dim_date_df["full_date"]).fillna(pd.Timestamp("2099-12-31"))
+    rental_df["rental_date"] = pd.to_datetime(rental_df["rental_date"]).fillna(pd.Timestamp("2027-10-7"))
+    rental_df["return_date"] = pd.to_datetime(rental_df["return_date"]).fillna(pd.Timestamp("2027-10-7"))
+    dim_date_df["full_date"] = pd.to_datetime(dim_date_df["full_date"]).fillna(pd.Timestamp("2027-10-7"))
 
     inventory_base = inventory_df[["inventory_id", "film_id", "store_id"]]
 
