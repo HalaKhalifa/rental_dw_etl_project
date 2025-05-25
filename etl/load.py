@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from config import engine_star
 
-def load_table(df, table_name, if_exists="append"):
+def load_table(df, table_name, if_exists='append'):
     """
     Load a DataFrame into the rental_dw_star database.
     Args:

@@ -19,6 +19,7 @@ def transform_dim_date(payment_df, rental_df):
     dates["day_name"] = dates["full_date"].dt.day_name()
     dates["month_name"] = dates["full_date"].dt.month_name()
     dates["month_start"] = dates["full_date"].dt.to_period("M").dt.to_timestamp()
+    dates["date_id"] = range(1, len(dates) + 1)
 
     return dates.drop_duplicates()
 
@@ -72,7 +73,6 @@ def transform_dim_film(film, language, film_category, category):
         "name_lang": "language_name",
         "name_cat": "category"
     })
-    film_full = film_full.dropna(subset=["film_id"])
 
     film_star = pd.DataFrame({
         "film_id": film_full["film_id"],

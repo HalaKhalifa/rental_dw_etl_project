@@ -23,10 +23,8 @@ It covers:
 
 ```plaintext
 rental_dw_etl_project/
-├── dags/
-│   └── rental_dw_etl_dag.py       # Airflow DAG (automated ETL)
 ├── etl/
-│   ├── etl.py                     # Orchestration script (manual run)
+│   ├── etlPipline.py              # Orchestration script (manual run)
 │   ├── extract.py                 # Extract data from MySQL
 │   ├── transform.py               # Build dimension & fact tables
 │   ├── load.py                    # Load data into star schema
@@ -36,6 +34,8 @@ rental_dw_etl_project/
 │   └── app.py                     # Streamlit dashboard UI
 ├── tests/
 │   └── insert_test_data.sql       # Dirty data for testing ETL robustness
+├── src/
+│   └── starSchemaDimensionalModel.pdf       # The dimensional model design document
 ├── config.py                      # DB credentials (editable)
 ├── requirements.txt               # Dependencies
 └── README.md                      # You're reading it!
